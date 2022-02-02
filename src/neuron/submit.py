@@ -5,6 +5,7 @@ The copyrights of this software are owned by Duke University.
 Please refer to the LICENSE and README.md files for licensing instructions.
 The source code can be found on the following GitHub repository: https://github.com/wmglab-duke/ascent
 """
+
 import multiprocessing
 import os
 import shutil
@@ -17,11 +18,6 @@ import numpy as np
 import warnings
 import pickle
 import argparse
-#Set up parser and top level args
-parser = argparse.ArgumentParser(description='ASCENT: Automated Simulations to Characterize Electrical Nerve Thresholds')
-parser.add_argument('run_indices', nargs = '+', help = 'Space separated indices to submit NEURON sims for')
-parser.add_argument('-p','--partition', help = 'If submitting on a cluster, overrides default partition assignment')
-
 
 ALLOWED_SUBMISSION_CONTEXTS = ['cluster', 'local','auto']
 OS = 'UNIX-LIKE' if any([s in sys.platform for s in ['darwin', 'linux']]) else 'WINDOWS'
@@ -130,9 +126,9 @@ def get_thresh_bounds(sim_dir: str, sim_name: str, inner_ind: int):
                 unused_protocol_keys = ['top', 'bottom']
 
                 if any(unused_protocol_key in sim_config['protocol']['bounds_search'].keys()
-                        for unused_protocol_key in unused_protocol_keys):
+                       for unused_protocol_key in unused_protocol_keys):
                     warnings.warn('WARNING: scout_sim is defined in Sim, so not using "top" or "bottom" '
-                                    'which you also defined \n')
+                                  'which you also defined \n')
 
             else:
                 warnings.warn(f"No fiber threshold exists for scout sim: inner{inner_ind} fiber0")
@@ -148,7 +144,7 @@ def get_thresh_bounds(sim_dir: str, sim_name: str, inner_ind: int):
 
 
 def make_task(my_os: str, start_p: str, sim_p: str, inner: int, fiber: int, top: float, bottom: float,
-                diam: float, deltaz: float, axonnodes: int):
+              diam: float, deltaz: float, axonnodes: int):
     with open(start_p, 'w+') as handle:
         if my_os == 'UNIX-LIKE':
             lines = [
@@ -168,13 +164,13 @@ def make_task(my_os: str, start_p: str, sim_p: str, inner: int, fiber: int, top:
                 '-c \"saveflag_end_ap_times=0\" '  # for backwards compatible, overwritten in launch.hoc if 1
                 '-c \"saveflag_runtime=0\" '  # for backwards compatible, overwritten in launch.hoc if 1
                 '-c \"load_file(\\\"launch.hoc\\\")\" blank.hoc\n'.format(sim_p,
-                                                                            inner,
-                                                                            fiber,
-                                                                            top,
-                                                                            bottom,
-                                                                            diam,
-                                                                            deltaz,
-                                                                            axonnodes)
+                                                                          inner,
+                                                                          fiber,
+                                                                          top,
+                                                                          bottom,
+                                                                          diam,
+                                                                          deltaz,
+                                                                          axonnodes)
             ]
 
             # copy special files ahead of time to avoid 'text file busy error'
@@ -198,14 +194,14 @@ def make_task(my_os: str, start_p: str, sim_p: str, inner: int, fiber: int, top:
                 '-c \"saveflag_end_ap_times=0\" '  # for backwards compatible, overwritten in launch.hoc if 1
                 '-c \"saveflag_runtime=0\" '  # for backwards compatible, overwritten in launch.hoc if 1
                 '-c \"load_file(\\\"launch.hoc\\\")\" blank.hoc\n'.format(os.getcwd(),
-                                                                            sim_path_win,
-                                                                            inner,
-                                                                            fiber,
-                                                                            top,
-                                                                            bottom,
-                                                                            diam,
-                                                                            deltaz,
-                                                                            axonnodes)
+                                                                          sim_path_win,
+                                                                          inner,
+                                                                          fiber,
+                                                                          top,
+                                                                          bottom,
+                                                                          diam,
+                                                                          deltaz,
+                                                                          axonnodes)
             ]
 
         handle.writelines(lines)
@@ -322,7 +318,7 @@ def cluster_submit(run_number: int, partition: str, mem: int=2000, array_length_
 
                         # get the axonnodes from data/inputs/inner{}_fiber{}.dat top line
                         fiber_ve_path = os.path.join(fibers_path,
-                                                        'inner{}_fiber{}.dat'.format(inner_ind_solo, fiber_ind_solo))
+                                                     'inner{}_fiber{}.dat'.format(inner_ind_solo, fiber_ind_solo))
                         fiber_ve = np.loadtxt(fiber_ve_path)
                         n_fiber_coords = int(fiber_ve[0])
 
@@ -332,7 +328,7 @@ def cluster_submit(run_number: int, partition: str, mem: int=2000, array_length_
                             axonnodes = int(n_fiber_coords)
 
                         make_task(OS, start_path_solo, sim_path, inner_ind_solo, fiber_ind_solo, stimamp_top, stimamp_bottom,
-                                    diameter, deltaz, axonnodes)
+                                  diameter, deltaz, axonnodes)
 
                         # submit batch job for fiber
                         job_name = '{}_{}'.format(sim_name, master_fiber_name_solo)
@@ -385,7 +381,7 @@ def cluster_submit(run_number: int, partition: str, mem: int=2000, array_length_
 
                             # get the axonnodes from data/inputs/inner{}_fiber{}.dat top line
                             fiber_ve_path = os.path.join(fibers_path,
-                                                            'inner{}_fiber{}.dat'.format(inner_ind, fiber_ind))
+                                                         'inner{}_fiber{}.dat'.format(inner_ind, fiber_ind))
                             fiber_ve = np.loadtxt(fiber_ve_path)
                             n_fiber_coords = int(fiber_ve[0])
 
@@ -395,7 +391,7 @@ def cluster_submit(run_number: int, partition: str, mem: int=2000, array_length_
                                 axonnodes = int(n_fiber_coords)
 
                             start_path = '{}{}{}'.format(start_path_base, job_count,
-                                                            '.sh' if OS == 'UNIX-LIKE' else '.bat')
+                                                         '.sh' if OS == 'UNIX-LIKE' else '.bat')
                             start_paths_list.append(start_path)
 
                             inner_index_tally.append(inner_ind)
@@ -404,7 +400,7 @@ def cluster_submit(run_number: int, partition: str, mem: int=2000, array_length_
                             stimamp_top, stimamp_bottom = get_thresh_bounds(sim_dir, sim_name, inner_ind)
                             if stimamp_top is not None and stimamp_bottom is not None:
                                 make_task(OS, start_path, sim_path, inner_ind, fiber_ind, stimamp_top, stimamp_bottom,
-                                            diameter, deltaz, axonnodes)
+                                          diameter, deltaz, axonnodes)
                                 array_index += 1
                                 job_count += 1
 
@@ -421,10 +417,10 @@ def cluster_submit(run_number: int, partition: str, mem: int=2000, array_length_
                             if fiber_file_ind == max_fibers_files_ind:
                                 with open(key_file, "ab") as f:
                                     np.savetxt(f,
-                                                ([x for xs in data[0] for x in xs],
+                                               ([x for xs in data[0] for x in xs],
                                                 [y for ys in data[1] for y in ys],
                                                 [z for zs in data[2] for z in zs]),
-                                                fmt='%d')
+                                               fmt='%d')
 
                                 data = [[], [], []]
 
@@ -432,9 +428,9 @@ def cluster_submit(run_number: int, partition: str, mem: int=2000, array_length_
                             job_name = f"{sim_name}_{sim_array_batch}"
 
                             os.system(f"sbatch --job-name={job_name} --output={out_dir}%a.log "
-                                        f"--error={err_dir}%a.log --array={start}-{job_count - 1} "
-                                        f"--mem={mem} --cpus-per-task=1 "
-                                        f"--partition={partition} array_launch.slurm {start_path_base}")
+                                      f"--error={err_dir}%a.log --array={start}-{job_count - 1} "
+                                      f"--mem={mem} --cpus-per-task=1 "
+                                      f"--partition={partition} array_launch.slurm {start_path_base}")
 
                             # allow job to start before removing slurm file
                             time.sleep(1.0)
@@ -506,23 +502,23 @@ def make_local_submission_list(run_number: int):
                     diameter = sim_config['fibers']['z_parameters']['diameter']
 
                 for fiber_filename in [x for x in os.listdir(fibers_path) if re.match('inner[0-9]+_fiber['
-                                                                                        '0-9]+\\.dat', x)]:
+                                                                                      '0-9]+\\.dat', x)]:
                     master_fiber_name = str(fiber_filename.split('.')[0])
                     inner_name, fiber_name = tuple(master_fiber_name.split('_'))
                     inner_ind = int(inner_name.split('inner')[-1])
                     fiber_ind = int(fiber_name.split('fiber')[-1])
 
                     thresh_path = os.path.join(output_path,
-                                                'thresh_inner{}_fiber{}.dat'.format(inner_ind, fiber_ind))
+                                               'thresh_inner{}_fiber{}.dat'.format(inner_ind, fiber_ind))
                     if os.path.exists(thresh_path):
                         print('Found {} -->\t\tskipping inner ({}) fiber ({})'.format(thresh_path, inner_ind,
-                                                                                        fiber_ind))
+                                                                                      fiber_ind))
                         continue
 
                     # local
                     start_path = os.path.join(sim_path, '{}_{}_start{}'.format(inner_ind, fiber_ind,
-                                                                                '.sh' if OS == 'UNIX-LIKE'
-                                                                                else '.bat'))
+                                                                               '.sh' if OS == 'UNIX-LIKE'
+                                                                               else '.bat'))
                     stimamp_top, stimamp_bottom = get_thresh_bounds(sim_dir, sim_name, inner_ind)
                     if inner_fiber_diam_key is not None:
                         diameter = get_diameter(inner_fiber_diam_key, inner_ind, fiber_ind)
@@ -537,7 +533,7 @@ def make_local_submission_list(run_number: int):
                         axonnodes = int(n_fiber_coords)
 
                     make_task(OS, start_path, sim_path, inner_ind, fiber_ind, stimamp_top, stimamp_bottom,
-                                diameter, deltaz, axonnodes)
+                              diameter, deltaz, axonnodes)
 
                     # submit batch job for fiber
                     output_log = os.path.join(out_dir, '{}{}'.format(master_fiber_name, '.log'))
@@ -552,10 +548,20 @@ def make_local_submission_list(run_number: int):
 
     return local_args_list
 
+
+def get_args():
+    #Set up parser and top level args
+    parser = argparse.ArgumentParser(description='ASCENT: Automated Simulations to Characterize Electrical Nerve Thresholds')
+    parser.add_argument('run_indices', nargs = '+', help = 'Space separated indices to submit NEURON sims for')
+    parser.add_argument('-p','--partition', help = 'If submitting on a cluster, overrides default partition assignment')
+    args = parser.parse_args()
+    return args
+
 def main():
+    #parse args
+    args = get_args()
 
     #validate inputs
-    args = parser.parse_args()
     run_inds = args.run_indices
     runs = []
     submission_contexts = []
