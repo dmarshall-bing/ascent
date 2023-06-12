@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install isort
+        run: pip install isort
+
+      - name: Run isort
+        run: isort --check-only config docs examples scripts src run tests
+
+      - name: Install black
+        run: pip install black
+
+      - name: Run black
+        run: black --check config docs examples scripts src run tests
+
+      - name: Install flake8 and plugins
+        run: |
+          pip install flake8 flake8-eradicate flake8-simplify flake8-bugbear flake8-builtins flake8-comprehensions flake8-blind-except flake8-use-fstring
+
+      - name: Run flake8
+        run: flake8 --extend-ignore=T100,T101,T102 config docs examples scripts src run tests
+
+      - name: Install docstring linting dependencies
+        run: pip install flake8 flake8-docstrings flake8-rst-docstrings darglint
+
+      - name: Run docstring linting
+        run: flake8 --select=D,DAR,RST config docs examples scripts src run
+
+      - name: Check for DevelopmentError
+        run: |
+          grep -R "raise DevelopmentError" --include \*.py . || true
+          pip install flake8 flake8-fixme
+          flake8 --select=T100,T101,T102 config docs examples scripts src run tests
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install pytest and coverage
+        run: pip install pytest pytest-cov
+
+      - name: Install libgl1
+        run: apt-get update && apt-get -y install libgl1
+
+      - name: Run pytest
+        run: pytest --cov=src/ tests/
+
+      - name: Generate coverage report
+        run: coverage xml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}
