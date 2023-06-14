@@ -80,8 +80,8 @@ jobs:
       - name: Install pytest and coverage
         run: pip install pytest pytest-cov
 
-      - name: Install libgl1
-        run: apt-get update && apt-get -y install libgl1
+#      - name: Install libgl1
+#        run: apt-get update && apt-get -y install libgl1
 
       - name: Run pytest
         run: pytest --cov=src/ tests/
